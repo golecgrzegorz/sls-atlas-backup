@@ -1,0 +1,80 @@
+service: sls-atlas-backup
+useDotenv: true
+frameworkVersion: '3'
+
+package:
+  individually: true
+  exclude:
+    - ./layer/*
+
+custom:
+  bucket: mongo-atlas-db-dumps
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  memorySize: 512
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'eu-central-1'}
+  profile: global-lambdas
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - s3:GetObject
+        - s3:PutObject
+        - s3:PutObjectAcl
+      Resource: "arn:aws:s3:::${self:custom.bucket}/*"
+    - Effect: Allow
+      Action:
+        - sqs:*
+      Resource:
+        Fn::GetAtt: [ SQSDumpDatabaseToS3, Arn ]
+  environment:
+    BUCKET: ${self:custom.bucket}
+    MONGOURIS_TO_BACKUP: ${env:MONGOURIS_TO_BACKUP}
+    SQS_DUMP_QUEUE_URL: { Ref: SQSDumpDatabaseToS3 }
+
+layers:
+  mongodump:
+    name: mongodump
+    description: MongoDB mongodump binary
+    compatibleRuntimes:
+      - nodejs18.x
+    compatibleArchitectures:
+      - x86_64
+    package:
+      artifact: layer/mongodump.zip
+
+
+functions:
+  backupScheduler:
+    handler: src/index.backup
+    events:
+      - schedule: rate(2 minutes)
+
+  # sqs lambda handler
+  dumpDatabaseToS3SQS:
+    handler: src/index.dumpDatabaseToS3SQS
+    memorySize: 512
+    timeout: 60
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - SQSDumpDatabaseToS3
+              - Arn
+    layers:
+      - !Ref MongodumpLambdaLayer
+
+resources:
+  Resources:
+    SQSDumpDatabaseToS3:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: ${opt:stage, self:provider.stage}-atlas-dump-queue
+
+    S3AtlasDumpsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.bucket}
+        AccessControl: Private

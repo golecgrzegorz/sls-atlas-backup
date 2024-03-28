@@ -1,0 +1,18 @@
+{
+  "name": "sls-atlas-backup",
+  "version": "1.0.0",
+  "description": "Automatic S3 backup for Mongo Atlas free shared clusters",
+  "author": "Gregory Golec <grzegorz.golec.squareboxmobile@gmail.com>",
+  "main": "src/index.js",
+  "scripts": {
+    "deploy:prod": "sls deploy -s prod -r eu-central-1",
+    "deploy:dev": "SLS_DEBUG=* sls deploy -s dev -r eu-central-1",
+    "info:dev": "sls info -s dev -r eu-central-1",
+    "info:prod": "sls info -s prod -r eu-central-1"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.540.0",
+    "@aws-sdk/client-sqs": "^3.540.0"
+  }
+}
