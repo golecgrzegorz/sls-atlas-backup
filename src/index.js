@@ -18,10 +18,6 @@ module.exports.backup = async (_event, _context) => {
       uri.searchParams.append('authSource', '$external');
       uri.searchParams.append('authMechanism', 'MONGODB-AWS');
 
-      console.log('>>> Sqs send', {
-        databaseName,
-        databaseURI: uri.href
-      });
       const message = new SendMessageCommand({
         MessageBody: JSON.stringify({
           databaseName,
@@ -42,13 +38,11 @@ module.exports.backup = async (_event, _context) => {
 module.exports.dumpDatabaseToS3SQS = async (event, _context) => {
   try {
     for (let record of event.Records) {
-      console.log('>>> body.record', record.body);
       const body = JSON.parse(record.body);
 
       const [date, _time] = (new Date()).toISOString().split('T');
       const dbName = body.databaseName.toLowerCase();
       const path = `/tmp/dump-${dbName}-${date}.db`;
-      console.log('>>> body.databaseURI', body.databaseURI);
       execSync(`/opt/mongodump '${body.databaseURI}' --gzip --archive=${path} --quiet`, { stdio: 'inherit', encoding: 'utf8' });
 
       await uploadToS3({
