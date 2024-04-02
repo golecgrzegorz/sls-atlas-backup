@@ -26,7 +26,7 @@ provider:
       Resource: "arn:aws:s3:::${self:custom.bucket}/*"
     - Effect: Allow
       Action:
-        - sqs:*
+        - sqs:* 
       Resource:
         Fn::GetAtt: [ SQSDumpDatabaseToS3, Arn ]
   environment:
