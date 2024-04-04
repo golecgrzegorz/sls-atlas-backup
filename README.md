@@ -38,9 +38,7 @@ You can define DLQ (Dead Letter Queue) for your SQS to have to handle unexpected
 
 I have multiple AWS credentials defined locally that's why Iam using serverless.js `profile` option to select preferred credentials.
 
-```yaml
-  profile: global-lambdas
-```
+To deploy just run:
 
 ```bash
     npm run deploy:dev
